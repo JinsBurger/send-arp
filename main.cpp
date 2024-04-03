@@ -1,54 +1,43 @@
 #include <cstdio>
 #include <pcap.h>
-#include "ethhdr.h"
-#include "arphdr.h"
+#include "attack.h"
 
-#pragma pack(push, 1)
-struct EthArpPacket final {
-	EthHdr eth_;
-	ArpHdr arp_;
-};
-#pragma pack(pop)
 
 void usage() {
-	printf("syntax: send-arp-test <interface>\n");
-	printf("sample: send-arp-test wlan0\n");
+	printf("syntax : send-arp <interface> <sender ip> <target ip> [<sender ip 2> <target ip 2> ...]\n");
+	printf("sample : send-arp wlan0 192.168.10.2 192.168.10.1\n");
 }
 
 int main(int argc, char* argv[]) {
-	if (argc != 2) {
+	if (argc < 4 || argc % 2 != 0) {
 		usage();
 		return -1;
 	}
 
 	char* dev = argv[1];
 	char errbuf[PCAP_ERRBUF_SIZE];
-	pcap_t* handle = pcap_open_live(dev, 0, 0, 0, errbuf);
+	char my_mac[0x100];
+	char my_ip[0x100];
+
+	pcap_t* handle = pcap_open_live(dev, PCAP_ERRBUF_SIZE, 1, 1, errbuf);
 	if (handle == nullptr) {
 		fprintf(stderr, "couldn't open device %s(%s)\n", dev, errbuf);
 		return -1;
 	}
 
-	EthArpPacket packet;
-
-	packet.eth_.dmac_ = Mac("00:00:00:00:00:00");
-	packet.eth_.smac_ = Mac("00:00:00:00:00:00");
-	packet.eth_.type_ = htons(EthHdr::Arp);
-
-	packet.arp_.hrd_ = htons(ArpHdr::ETHER);
-	packet.arp_.pro_ = htons(EthHdr::Ip4);
-	packet.arp_.hln_ = Mac::SIZE;
-	packet.arp_.pln_ = Ip::SIZE;
-	packet.arp_.op_ = htons(ArpHdr::Request);
-	packet.arp_.smac_ = Mac("00:00:00:00:00:00");
-	packet.arp_.sip_ = htonl(Ip("0.0.0.0"));
-	packet.arp_.tmac_ = Mac("00:00:00:00:00:00");
-	packet.arp_.tip_ = htonl(Ip("0.0.0.0"));
-
-	int res = pcap_sendpacket(handle, reinterpret_cast<const u_char*>(&packet), sizeof(EthArpPacket));
-	if (res != 0) {
-		fprintf(stderr, "pcap_sendpacket return %d error=%s\n", res, pcap_geterr(handle));
+	if(get_my_mac(dev, my_mac, sizeof(my_mac)) != 0) {
+        perror("get_my_mac_address");
+        return -1;
 	}
+
+
+	if(get_my_ip(dev, my_ip, sizeof(my_ip)) != 0) {
+        perror("get_my_ip");
+        return -1;
+	}
+
+	for(int i=2; i < argc; i+=2)
+		proc_arp_attack(handle, my_mac, my_ip, argv[i], argv[i+1]);
 
 	pcap_close(handle);
 }
