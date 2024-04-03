@@ -26,14 +26,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(get_my_mac(dev, my_mac, sizeof(my_mac)) != 0) {
-        perror("get_my_mac_address");
-        return -1;
+		perror("get_my_mac_address");
+		return -1;
 	}
 
 
 	if(get_my_ip(dev, my_ip, sizeof(my_ip)) != 0) {
-        perror("get_my_ip");
-        return -1;
+		error("get_my_ip");
+		return -1;
 	}
 
 	for(int i=2; i < argc; i+=2)
