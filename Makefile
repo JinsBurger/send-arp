@@ -4,7 +4,7 @@ CXXFLAGS=-std=c++11
 all: send-arp-test
 
 
-main.o: mac.h ip.h ethhdr.h arphdr.h main.cpp
+main.o: mac.h ip.h ethhdr.h arphdr.h main.cpp attack.h
 
 arphdr.o: mac.h ip.h arphdr.h arphdr.cpp
 
