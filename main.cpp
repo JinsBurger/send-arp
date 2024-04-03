@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 
 
 	if(get_my_ip(dev, my_ip, sizeof(my_ip)) != 0) {
-		error("get_my_ip");
+		perror("get_my_ip");
 		return -1;
 	}
 
